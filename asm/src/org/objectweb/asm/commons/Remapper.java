@@ -68,6 +68,24 @@ public abstract class Remapper {
         return desc;
     }
 
+    public void mapDesc( StringBuilder result, Type t ) {
+        switch ( t.getSort()) {
+            case Type.ARRAY:
+                for (int i = 0; i < t.getDimensions(); ++i) {
+                    result.append( '[' );
+                }
+                mapDesc( result, t.getElementType());
+                return;
+            case Type.OBJECT:
+                String newType = map( t.getInternalName());
+                if (newType != null) {
+                    result.append( "L" ).append(  newType ).append( ";" );
+                    return;
+                }
+        }
+        result.append(  t.getDescriptor() );
+    }
+
     private Type mapType(Type t) {
         switch (t.getSort()) {
         case Type.ARRAY:
@@ -118,16 +136,17 @@ public abstract class Remapper {
         }
 
         Type[] args = Type.getArgumentTypes(desc);
-        StringBuffer s = new StringBuffer("(");
+        StringBuilder s = new StringBuilder("(");
         for (int i = 0; i < args.length; i++) {
-            s.append(mapDesc(args[i].getDescriptor()));
+            mapDesc( s, Type.getType( args[i].getDescriptor() ) );
         }
         Type returnType = Type.getReturnType(desc);
         if (returnType == Type.VOID_TYPE) {
             s.append(")V");
             return s.toString();
         }
-        s.append(')').append(mapDesc(returnType.getDescriptor()));
+        s.append(')');
+        mapDesc( s, Type.getType( returnType.getDescriptor() ) );
         return s.toString();
     }
 
@@ -145,7 +164,7 @@ public abstract class Remapper {
     }
 
     /**
-     * 
+     *
      * @param typeSignature
      *            true if signature is a FieldTypeSignature, such as the
      *            signature parameter of the ClassVisitor.visitField or
@@ -173,7 +192,7 @@ public abstract class Remapper {
 
     /**
      * Map method name to the new name. Subclasses can override.
-     * 
+     *
      * @param owner
      *            owner of the method.
      * @param name
@@ -188,7 +207,7 @@ public abstract class Remapper {
 
     /**
      * Map invokedynamic method name to the new name. Subclasses can override.
-     * 
+     *
      * @param name
      *            name of the invokedynamic.
      * @param desc
@@ -201,7 +220,7 @@ public abstract class Remapper {
 
     /**
      * Map field name to the new name. Subclasses can override.
-     * 
+     *
      * @param owner
      *            owner of the field.
      * @param name
